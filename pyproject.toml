@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "geopackage-toolkit"
+version = "0.1.0"
+description = "Python toolkit for GeoPackage: validate, query, convert, and publish spatial data without PostGIS or ArcGIS."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Asem Daaboul", email = "asem.daaboul@gmail.com" },
+]
+keywords = [
+    "geopackage",
+    "gis",
+    "spatialite",
+    "spatial",
+    "geometry",
+    "validation",
+    "geospatial",
+    "ogc",
+    "sqlite",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.scripts]
+geopkg = "geopkgtoolkit.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Asem-D/geopackage-toolkit"
+Repository = "https://github.com/Asem-D/geopackage-toolkit"
+Issues = "https://github.com/Asem-D/geopackage-toolkit/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/geopkgtoolkit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
