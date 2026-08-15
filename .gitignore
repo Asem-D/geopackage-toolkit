@@ -10,6 +10,9 @@ build/
 # Pytest
 .pytest_cache/
 
+# MkDocs build output
+site/
+
 # IDE
 .vscode/
 .idea/

@@ -6,7 +6,9 @@ SRID mismatches, and bounding box sanity. Designed to catch problems
 early before they waste time in spatial queries.
 """
 
+import sqlite3
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Optional
 
 from geopkgtoolkit._spatialite import connect, list_layers
@@ -69,7 +71,7 @@ class GpkgReport:
         return "\n".join(lines)
 
 
-def validate_layer(con, table, expected_srid=None):
+def validate_layer(con: sqlite3.Connection, table: str, expected_srid: Optional[int] = None) -> LayerReport:
     """Validate geometry health for a single layer.
 
     Args:
@@ -146,7 +148,7 @@ def validate_layer(con, table, expected_srid=None):
     )
 
 
-def validate_layers(path, expected_srid=None, layers=None):
+def validate_layers(path: str | Path, expected_srid: Optional[int] = None, layers: Optional[list[str]] = None) -> GpkgReport:
     """Validate geometry health for layers in a GeoPackage.
 
     Args:

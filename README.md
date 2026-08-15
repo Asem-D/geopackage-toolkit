@@ -1,5 +1,9 @@
 # geopackage-toolkit
 
+[![CI](https://github.com/Asem-D/geopackage-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/Asem-D/geopackage-toolkit/actions)
+[![Docs](https://readthedocs.org/projects/geopackage-toolkit/badge/?version=latest)](https://geopackage-toolkit.readthedocs.io)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Python toolkit for GeoPackage spatial data. Validate, query, and explore spatial data without PostGIS or ArcGIS.
 
 **Zero compiled dependencies.** Uses SpatiaLite (embedded in SQLite) for all spatial operations. One file format (`.gpkg`), one dependency chain, clean Python API.
@@ -32,7 +36,10 @@ This toolkit fills that gap. Local-first, no server required.
 ## Installation
 
 ```bash
-pip install geopackage-toolkit
+# From source (PyPI coming soon)
+git clone https://github.com/Asem-D/geopackage-toolkit.git
+cd geopackage-toolkit
+pip install -e .
 ```
 
 ### Prerequisites

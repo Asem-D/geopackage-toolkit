@@ -6,6 +6,7 @@ and bounding box filtering. All functions work with GeoPackage's native
 rtree tables (not SpatiaLite's SpatialIndex virtual table).
 """
 
+import sqlite3
 from typing import Optional
 
 
@@ -39,14 +40,14 @@ def _create_rtree(con, table, geom_col):
 
 
 def count_in_zones(
-    con,
-    feature_table,
-    zone_table,
-    feature_geom=None,
-    zone_geom=None,
-    zone_id="fid",
-    ensure_index=True,
-):
+    con: sqlite3.Connection,
+    feature_table: str,
+    zone_table: str,
+    feature_geom: Optional[str] = None,
+    zone_geom: Optional[str] = None,
+    zone_id: str = "fid",
+    ensure_index: bool = True,
+) -> list[tuple[int, int]]:
     """Count features inside each zone using rtree spatial index.
 
     For each zone polygon, counts how many features from feature_table
@@ -139,14 +140,14 @@ def count_in_zones(
 
 
 def points_in_polygons(
-    con,
-    points_table,
-    polygon_table,
-    points_geom=None,
-    polygon_geom=None,
-    polygon_id="fid",
-    ensure_index=True,
-):
+    con: sqlite3.Connection,
+    points_table: str,
+    polygon_table: str,
+    points_geom: Optional[str] = None,
+    polygon_geom: Optional[str] = None,
+    polygon_id: str = "fid",
+    ensure_index: bool = True,
+) -> list[tuple[int, Optional[int]]]:
     """Classify points into containing polygons.
 
     For each point, finds which polygon contains it. Uses rtree
@@ -215,12 +216,12 @@ def points_in_polygons(
 
 
 def bbox_filter(
-    con,
-    table,
-    bbox,
-    geom_col=None,
-    ensure_index=True,
-):
+    con: sqlite3.Connection,
+    table: str,
+    bbox: tuple[float, float, float, float],
+    geom_col: Optional[str] = None,
+    ensure_index: bool = True,
+) -> list[int]:
     """Return feature IDs within a bounding box.
 
     Uses rtree spatial index for fast bbox filtering.

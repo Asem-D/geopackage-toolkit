@@ -13,7 +13,7 @@ from pathlib import Path
 _SPATIALITE_DIR = os.environ.get("SPATIALITE_DIR", r"C:\spatialite")
 
 
-def connect(gpkg_path):
+def connect(gpkg_path: str | Path) -> sqlite3.Connection:
     """Open a GeoPackage with SpatiaLite loaded.
 
     Args:
@@ -61,7 +61,7 @@ def connect(gpkg_path):
     return con
 
 
-def list_layers(con):
+def list_layers(con: sqlite3.Connection) -> list[dict]:
     """List all feature layers in a GeoPackage connection.
 
     Args:
