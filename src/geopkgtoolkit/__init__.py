@@ -13,8 +13,9 @@ Example:
 from geopkgtoolkit._spatialite import connect
 from geopkgtoolkit.validate import validate_layers, validate_layer
 from geopkgtoolkit.query import count_in_zones, points_in_polygons, bbox_filter
+from geopkgtoolkit.operations import buffer, clip, intersect
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __all__ = [
     "connect",
     "validate_layers",
@@ -22,4 +23,7 @@ __all__ = [
     "count_in_zones",
     "points_in_polygons",
     "bbox_filter",
+    "buffer",
+    "clip",
+    "intersect",
 ]

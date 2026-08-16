@@ -34,9 +34,13 @@ def _rtree_exists(con, table, geom_col):
         return False
 
 
-def _create_rtree(con, table, geom_col):
-    """Create rtree spatial index (idempotent)."""
-    con.execute(f"SELECT CreateSpatialIndex('{table}', '{geom_col}')")
+def _create_rtree(con: sqlite3.Connection, table: str, geom_col: str) -> bool:
+    """Create rtree spatial index (idempotent). Returns True if successful."""
+    try:
+        result = con.execute(f"SELECT CreateSpatialIndex('{table}', '{geom_col}')").fetchone()
+        return result is not None and result[0] != 0
+    except Exception:
+        return False
 
 
 def count_in_zones(
