@@ -143,8 +143,8 @@ The toolkit auto-creates rtree indexes when missing. First run builds the index,
 ## Roadmap
 
 - [x] v0.1.0: Validate + Query modules
-- [ ] v0.2.0: Format conversion (Shapefile, GeoJSON, FlatGeobuf to/from GeoPackage)
-- [ ] v0.3.0: QGIS Processing headless access (buffer, clip, dissolve, spatial join)
+- [x] v0.2.0: Spatial operations (buffer, clip, intersect) with CLI commands
+- [ ] v0.3.0: Format conversion (Shapefile, GeoJSON, FlatGeobuf to/from GeoPackage)
 - [ ] v0.4.0: Config-driven batch pipeline
 - [ ] v0.5.0: Vector tile generation for web publishing
 - [ ] v1.0.0: Full toolkit with visualization and schema extraction

@@ -4,6 +4,22 @@ All notable changes to geopackage-toolkit will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-08-15
+
+### Added
+
+- `buffer()` for polygon/point/line buffering with configurable distance
+- `clip()` for clipping one layer by another polygon boundary
+- `intersect()` for spatial intersection with attribute preservation
+- CLI commands: `geopkg buffer`, `geopkg clip`, `geopkg intersect`
+- 24 new tests for spatial operations
+- Auto-generated API reference for operations module
+
+### Changed
+
+- Version bumped to 0.2.0
+- Roadmap updated: v0.2.0 (spatial ops) complete, v0.3.0 now format conversion
+
 ## [0.1.0] - 2026-08-15
 
 ### Added

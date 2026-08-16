@@ -5,6 +5,9 @@ Usage:
     geopkg validate <file.gpkg> [--srid 4326] [--layers buildings,roads]
     geopkg count <file.gpkg> --features buildings --zones admin3
     geopkg info <file.gpkg>
+    geopkg buffer <file.gpkg> --layer buildings --distance 100 --output buffered
+    geopkg clip <file.gpkg> --source buildings --clip districts --output clipped
+    geopkg intersect <file.gpkg> --layer-a buildings --layer-b flood_zones --output result
 """
 
 import argparse
@@ -76,6 +79,76 @@ def cmd_info(args):
         con.close()
 
 
+def cmd_buffer(args):
+    """Buffer features by a distance."""
+    from geopkgtoolkit._spatialite import connect
+    from geopkgtoolkit.operations import buffer
+
+    con = connect(args.file)
+    try:
+        t0 = time.time()
+        output = buffer(
+            con, args.layer, args.distance,
+            output_table=args.output,
+            keep_attrs=not args.no_attrs,
+        )
+        elapsed = time.time() - t0
+        count = con.execute(f"SELECT COUNT(*) FROM [{output}]").fetchone()[0]
+        print(f"Buffered {count:,} features -> {output} ({elapsed:.1f}s)")
+        return 0
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    finally:
+        con.close()
+
+
+def cmd_clip(args):
+    """Clip source layer by clip layer."""
+    from geopkgtoolkit._spatialite import connect
+    from geopkgtoolkit.operations import clip
+
+    con = connect(args.file)
+    try:
+        t0 = time.time()
+        output = clip(
+            con, args.source, args.clip_layer,
+            output_table=args.output,
+        )
+        elapsed = time.time() - t0
+        count = con.execute(f"SELECT COUNT(*) FROM [{output}]").fetchone()[0]
+        print(f"Clipped {count:,} features -> {output} ({elapsed:.1f}s)")
+        return 0
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    finally:
+        con.close()
+
+
+def cmd_intersect(args):
+    """Spatial intersection of two layers."""
+    from geopkgtoolkit._spatialite import connect
+    from geopkgtoolkit.operations import intersect
+
+    con = connect(args.file)
+    try:
+        t0 = time.time()
+        output = intersect(
+            con, args.layer_a, args.layer_b,
+            output_table=args.output,
+        )
+        elapsed = time.time() - t0
+        count = con.execute(f"SELECT COUNT(*) FROM [{output}]").fetchone()[0]
+        print(f"Intersected {count:,} features -> {output} ({elapsed:.1f}s)")
+        return 0
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    finally:
+        con.close()
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="geopkg",
@@ -101,6 +174,31 @@ def main():
     p_info = subparsers.add_parser("info", help="Show GeoPackage layer info")
     p_info.add_argument("file", help="Path to GeoPackage file")
     p_info.set_defaults(func=cmd_info)
+
+    # buffer
+    p_buf = subparsers.add_parser("buffer", help="Buffer features by a distance")
+    p_buf.add_argument("file", help="Path to GeoPackage file")
+    p_buf.add_argument("--layer", required=True, help="Layer to buffer")
+    p_buf.add_argument("--distance", type=float, required=True, help="Buffer distance in CRS units")
+    p_buf.add_argument("--output", default="buffered", help="Output layer name (default: buffered)")
+    p_buf.add_argument("--no-attrs", action="store_true", help="Exclude source attributes from output")
+    p_buf.set_defaults(func=cmd_buffer)
+
+    # clip
+    p_clip = subparsers.add_parser("clip", help="Clip source layer by clip layer")
+    p_clip.add_argument("file", help="Path to GeoPackage file")
+    p_clip.add_argument("--source", required=True, help="Source layer to clip")
+    p_clip.add_argument("--clip", required=True, dest="clip_layer", help="Clip layer (polygon boundary)")
+    p_clip.add_argument("--output", default="clipped", help="Output layer name (default: clipped)")
+    p_clip.set_defaults(func=cmd_clip)
+
+    # intersect
+    p_int = subparsers.add_parser("intersect", help="Spatial intersection of two layers")
+    p_int.add_argument("file", help="Path to GeoPackage file")
+    p_int.add_argument("--layer-a", required=True, help="First input layer")
+    p_int.add_argument("--layer-b", required=True, help="Second input layer")
+    p_int.add_argument("--output", default="intersection", help="Output layer name (default: intersection)")
+    p_int.set_defaults(func=cmd_intersect)
 
     args = parser.parse_args()
     if not args.command:

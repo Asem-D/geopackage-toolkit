@@ -9,7 +9,7 @@ Validate, query, convert, and publish spatial data without PostGIS or ArcGIS. Ze
 ## Quick Example
 
 ```python
-from geopkgtoolkit import connect, validate_layers, count_in_zones
+from geopkgtoolkit import connect, validate_layers, count_in_zones, buffer, clip
 
 # Validate geometry health
 report = validate_layers("data.gpkg", expected_srid=4326)
@@ -20,6 +20,12 @@ con = connect("data.gpkg")
 counts = count_in_zones(con, "buildings", "admin3")
 for zone_id, count in counts[:5]:
     print(f"Zone {zone_id}: {count} buildings")
+
+# Buffer features by 100 meters
+buffer(con, "buildings", 100, "buildings_buffer")
+
+# Clip buildings by district boundary
+clip(con, "buildings", "districts", "buildings_in_district")
 ```
 
 ## Why This Exists
@@ -78,6 +84,23 @@ fids = bbox_filter(con, "buildings", (35.4, 33.8, 35.6, 33.9))
 # Point-in-polygon classification
 from geopkgtoolkit import points_in_polygons
 result = points_in_polygons(con, "pois", "districts")
+```
+
+### Spatial Operations
+
+Buffer, clip, and intersect features:
+
+```python
+from geopkgtoolkit import buffer, clip, intersect
+
+# Buffer buildings by 100 meters (use projected CRS)
+buffer(con, "buildings", 100, "buildings_100m")
+
+# Clip buildings to district boundaries
+clip(con, "buildings", "districts", "buildings_in_district")
+
+# Find intersection of two layers
+intersect(con, "buildings", "flood_zones", "buildings_in_flood")
 ```
 
 ### CLI Interface

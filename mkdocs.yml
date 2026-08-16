@@ -82,11 +82,13 @@ nav:
   - Guides:
     - Validation: guides/validate.md
     - Spatial Queries: guides/query.md
+    - Spatial Operations: guides/operations.md
   - CLI Reference: cli.md
   - Cookbook: cookbook.md
   - API Reference:
     - connect: api/connect.md
     - validate: api/validate.md
     - query: api/query.md
+    - operations: api/operations.md
   - Changelog: changelog.md
   - Contributing: contributing.md
