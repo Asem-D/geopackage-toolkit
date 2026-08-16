@@ -134,7 +134,7 @@ All spatial operations use **SpatiaLite** (embedded spatial SQL extension for SQ
 
 | Operation | Method | 500k features x 1k zones |
 |-----------|--------|--------------------------|
-| `count_in_zones` | rtree bbox + ST_Contains | ~30 seconds |
+| `count_in_zones` | rtree bbox + ST_Contains | ~8 seconds |
 | `count_in_zones` (no index) | ST_Contains only | >10 minutes |
 | `bbox_filter` | rtree lookup | <1 second |
 
