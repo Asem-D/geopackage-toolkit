@@ -33,7 +33,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           # Download SpatiaLite binaries for Windows CI
-          $url = "https://www.gaia-gis.it/gaia-sins/windows-bin-amd64/spatialite-loadable-modules-5.1.0-win-amd64.7z"
+          $url = "https://www.gaia-gis.it/gaia-sins/windows-bin-amd64/mod_spatialite-5.1.0-win-amd64.7z"
           $spatialiteDir = "${{ github.workspace }}\spatialite"
           New-Item -ItemType Directory -Force -Path $spatialiteDir
           $archive = "$spatialiteDir\spatialite.7z"
