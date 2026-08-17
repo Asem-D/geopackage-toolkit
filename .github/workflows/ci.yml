@@ -43,6 +43,8 @@ jobs:
           $extractedDir = Get-ChildItem -Path $spatialiteDir -Directory | Select-Object -First 1
           $dllDir = if ($extractedDir) { $extractedDir.FullName } else { $spatialiteDir }
           echo "SPATIALITE_DIR=$dllDir" >> $env:GITHUB_ENV
+          # Add to PATH so SQLite's LoadLibrary finds dependency DLLs
+          echo "$dllDir" >> $env:GITHUB_PATH
 
       - name: Install package
         run: |
