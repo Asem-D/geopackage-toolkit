@@ -39,6 +39,9 @@ jobs:
           $archive = "$spatialiteDir\spatialite.7z"
           Invoke-WebRequest -Uri $url -OutFile $archive
           7z x $archive -o"$spatialiteDir" -y
+          # Archive extracts to a subdirectory; flatten it
+          $subdir = Get-ChildItem -Path $spatialiteDir -Directory | Select-Object -First 1
+          if ($subdir) { Move-Item "$($subdir.FullName)\*" $spatialiteDir -Force }
           echo "SPATIALITE_DIR=$spatialiteDir" >> $env:GITHUB_ENV
 
       - name: Install package
