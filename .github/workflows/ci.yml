@@ -27,14 +27,19 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libspatialite-dev
+          sudo apt-get install -y libsqlite3-mod-spatialite libspatialite-dev
 
       - name: Install SpatiaLite (Windows)
         if: runner.os == 'Windows'
         run: |
-          # SpatiaLite binaries for Windows CI
-          # Download from gaia-gis.it and set SPATIALITE_DIR
-          echo "SPATIALITE_DIR=${{ github.workspace }}\spatialite" >> $env:GITHUB_ENV
+          # Download SpatiaLite binaries for Windows CI
+          $url = "https://www.gaia-gis.it/gaia-sins/windows-bin-amd64/spatialite-loadable-modules-5.1.0-win-amd64.7z"
+          $spatialiteDir = "${{ github.workspace }}\spatialite"
+          New-Item -ItemType Directory -Force -Path $spatialiteDir
+          $archive = "$spatialiteDir\spatialite.7z"
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          7z x $archive -o"$spatialiteDir" -y
+          echo "SPATIALITE_DIR=$spatialiteDir" >> $env:GITHUB_ENV
 
       - name: Install package
         run: |
