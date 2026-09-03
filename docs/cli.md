@@ -129,6 +129,51 @@ Total: 499,787 features across 1,627 zones (7.7s)
 
 ---
 
+### `geopkg pipeline`
+
+Run a config-driven batch pipeline (JSON or YAML).
+
+```bash
+geopkg pipeline <config.yaml|config.json>
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `config` | Path to pipeline config file (`.json`, `.yaml`, `.yml`) |
+
+**Example:**
+
+```bash
+$ geopkg pipeline pipeline.yaml
+
+Pipeline: pipeline.yaml -> processed.gpkg
+  1. import     ok      6 features (2 file(s))
+  2. clip       ok      6 features -> clipped
+  3. buffer     ok      6 features -> buffered
+  4. export     ok      6 features -> out/buffered.geojson
+  5. validate   ok      valid
+5/5 steps ok (1.8s)
+Report: pipeline.report.json
+```
+
+**Exit codes:**
+
+- `0`: All steps succeeded
+- `1`: One or more steps failed (or the config is invalid)
+
+**Notes:**
+
+- One pipeline operates on one working GeoPackage (`gpkg` key in the config)
+- Supported steps: `import`, `buffer`, `clip`, `intersect`, `export`, `validate`
+- With the default `fail_fast: false`, all steps run regardless of earlier failures
+- A JSON run report is written next to the config file by default
+- YAML configs require the optional extra: `pip install geopackage-toolkit[pipeline]`
+- See the [Pipeline Guide](guides/pipeline.md) for the full config reference
+
+---
+
 ## Common Workflows
 
 ### Data Quality Check

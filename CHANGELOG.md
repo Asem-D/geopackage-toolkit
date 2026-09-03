@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-09-04
+
+### Added
+- Config-driven batch pipeline: `run_pipeline()`, `load_config()`, and CLI `geopkg pipeline <config>`
+- Pipeline config supports JSON (stdlib) and YAML (optional extra: `pip install geopackage-toolkit[pipeline]`)
+- Step types: `import`, `buffer`, `clip`, `intersect`, `export`, `validate`
+- Glob batch input for imports (`input: "data/*.geojson"`) with layer names derived from file stems
+- `fail_fast` error policy (default `false`: all steps run, failures recorded per step)
+- JSON run report written per execution (steps, feature counts, errors, timing)
+- CLI exit code `1` when any step fails, `0` on full success (CI-friendly)
+- 22 new tests (81 total)
+
+### Fixed
+- README roadmap: v0.3.0 shipped GeoJSON + Shapefile conversion; FlatGeobuf moved to backlog
+
 ## [0.3.0] - 2026-09-03
 
 ### Added

@@ -82,6 +82,9 @@ geopkg import buildings.geojson --output new_data.gpkg --layer buildings
 
 # Import a Shapefile into a GeoPackage
 geopkg import buildings.shp --output new_data.gpkg --layer buildings
+
+# Run a config-driven batch pipeline (JSON or YAML)
+geopkg pipeline pipeline.yaml
 ```
 
 ## Python API
@@ -174,6 +177,34 @@ import_shapefile("new_data.gpkg", "input.shp", "buildings")
 
 GeoJSON export/import is pure Python. Shapefile support requires the optional `pyshp` dependency: `pip install geopackage-toolkit[convert]`.
 
+### Pipeline
+
+```python
+from geopkgtoolkit import run_pipeline
+
+# Run a sequence of steps from a config file (JSON or YAML)
+report = run_pipeline("pipeline.yaml")
+
+# Or define the pipeline in code
+report = run_pipeline({
+    "gpkg": "processed.gpkg",
+    "steps": [
+        {"step": "import", "input": "data/*.geojson"},          # glob batch input
+        {"step": "clip",   "source": "buildings", "clip": "districts"},
+        {"step": "buffer", "layer": "clipped", "distance": 100},
+        {"step": "export", "layer": "buffered", "format": "geojson",
+         "output": "out/buffered.geojson"},
+        {"step": "validate", "srid": 4326},
+    ],
+})
+
+assert report["ok"]  # False if any step failed
+for step in report["steps"]:
+    print(step["step"], step["status"], step.get("features", ""))
+```
+
+See the [Pipeline Guide](docs/guides/pipeline.md) for the full config reference.
+
 ### Connect
 
 ```python
@@ -207,10 +238,12 @@ The toolkit auto-creates rtree indexes when missing. First run builds the index,
 
 - [x] v0.1.0: Validate + Query modules
 - [x] v0.2.0: Spatial operations (buffer, clip, intersect) with CLI commands
-- [ ] v0.3.0: Format conversion (Shapefile, GeoJSON, FlatGeobuf to/from GeoPackage)
-- [ ] v0.4.0: Config-driven batch pipeline
+- [x] v0.3.0: Format conversion (GeoJSON + Shapefile import/export)
+- [x] v0.4.0: Config-driven batch pipeline (JSON/YAML)
 - [ ] v0.5.0: Vector tile generation for web publishing
 - [ ] v1.0.0: Full toolkit with visualization and schema extraction
+
+Backlog: FlatGeobuf support, reprojection (requires pyproj), QGIS Processing integration.
 
 ## Contributing
 

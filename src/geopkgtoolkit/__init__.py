@@ -20,8 +20,9 @@ from geopkgtoolkit.convert import (
     import_geojson,
     import_shapefile,
 )
+from geopkgtoolkit.pipeline import load_config, run_pipeline
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __all__ = [
     "connect",
     "validate_layers",
@@ -36,4 +37,6 @@ __all__ = [
     "export_shapefile",
     "import_geojson",
     "import_shapefile",
+    "load_config",
+    "run_pipeline",
 ]

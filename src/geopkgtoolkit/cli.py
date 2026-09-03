@@ -10,11 +10,13 @@ Usage:
     geopkg intersect <file.gpkg> --layer-a buildings --layer-b flood_zones --output result
     geopkg export <file.gpkg> --layer buildings --format geojson --output buildings.geojson
     geopkg import <input.geojson> --output data.gpkg --layer buildings
+    geopkg pipeline <config.yaml>
 """
 
 import argparse
 import sys
 import time
+from pathlib import Path
 
 
 def cmd_validate(args):
@@ -255,6 +257,27 @@ def cmd_import(args):
         return 1
 
 
+def cmd_pipeline(args):
+    """Run a config-driven batch pipeline."""
+    from geopkgtoolkit.pipeline import load_config, run_pipeline, summarize_report
+
+    try:
+        cfg = load_config(args.config)
+        default_report = Path(args.config).with_suffix(".report.json")
+        report = run_pipeline(
+            cfg,
+            report_path=cfg.get("report") or default_report,
+        )
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    print(summarize_report(report))
+    if report.get("report_file"):
+        print(f"Report: {report['report_file']}")
+    return 0 if report["ok"] else 1
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="geopkg",
@@ -323,6 +346,13 @@ def main():
     p_imp.add_argument("--geom-col", default="geom", help="Geometry column name (default: geom)")
     p_imp.add_argument("--srid", type=int, default=4326, help="SRID (default: 4326)")
     p_imp.set_defaults(func=cmd_import)
+
+    # pipeline
+    p_pipe = subparsers.add_parser(
+        "pipeline", help="Run a config-driven batch pipeline (JSON or YAML)"
+    )
+    p_pipe.add_argument("config", help="Path to pipeline config file (.json, .yaml, .yml)")
+    p_pipe.set_defaults(func=cmd_pipeline)
 
     args = parser.parse_args()
     if not args.command:
