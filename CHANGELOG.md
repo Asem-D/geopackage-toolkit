@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- **Imported geometry blobs now carry the registered SRID** (`SetSRID(GeomFromGeoJSON(...), srid)`). Previously the blob SRID could be left unset (0/-1), and mismatched blob SRIDs made `ST_Intersects` return `-1`, which SQLite treats as truthy — so `clip`/`intersect` could silently keep every feature instead of the matching ones
+- Fresh GeoPackages created by `import_geojson()`/`import_shapefile()` now initialize SpatiaLite metadata (`InitSpatialMetaData`), so spatial functions behave consistently regardless of connection mode
+- `clip()`/`intersect()` filters now require `ST_Intersects(...) = 1` explicitly, so SpatiaLite error codes can never pass as matches
+- CLI `geopkg export` creates missing output directories (consistent with the pipeline export step)
+- CLI `geopkg pipeline` header shows the config filename instead of `<dict>`
+- CLI reference docs: documented `import`, `export`, `buffer`, `clip`, `intersect`; corrected an inaccurate tip
+- 1 new regression test (82 total)
+
 ## [0.4.0] - 2026-09-04
 
 ### Added

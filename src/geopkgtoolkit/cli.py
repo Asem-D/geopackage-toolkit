@@ -163,6 +163,12 @@ def cmd_export(args):
         t0 = time.time()
         fmt = args.format.lower()
 
+        # Create missing output directories (matches pipeline export behavior)
+        from pathlib import Path
+        out_parent = Path(args.output).parent
+        if str(out_parent) not in ("", ".") and not out_parent.exists():
+            out_parent.mkdir(parents=True, exist_ok=True)
+
         if fmt == "geojson":
             out = export_geojson(con, args.layer, args.output, args.geom_col)
             elapsed = time.time() - t0

@@ -615,3 +615,63 @@ class TestWKTToGeoJSON:
             assert coords[2] == [10.0, 10.0]
         finally:
             con.close()
+
+class TestImportSRIDRegression:
+    """Regression tests for geometry blob SRID handling on import.
+
+    Blobs written without an explicit SRID made spatial functions such as
+    ST_Intersects return -1 (an error code) on some code paths, which SQLite
+    treats as truthy, so clip/intersect silently kept every feature.
+    """
+
+    POINTS = {
+        "type": "FeatureCollection",
+        "features": [
+            {"type": "Feature", "geometry": {"type": "Point", "coordinates": [10.0, 10.0]}, "properties": {"id": "inside"}},
+            {"type": "Feature", "geometry": {"type": "Point", "coordinates": [30.0, 30.0]}, "properties": {"id": "outside_ne"}},
+            {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-5.0, -5.0]}, "properties": {"id": "outside_sw"}},
+        ],
+    }
+
+    BOUNDARY = {
+        "type": "FeatureCollection",
+        "features": [
+            {"type": "Feature",
+             "geometry": {"type": "Polygon", "coordinates": [[[0.0, 0.0], [20.0, 0.0], [20.0, 20.0], [0.0, 20.0], [0.0, 0.0]]]},
+             "properties": {"name": "boundary"}},
+        ],
+    }
+
+    def test_import_sets_blob_srid_and_clip_filters(self, tmp_path):
+        """Imported blobs carry SRID 4326, and clip keeps only inside features."""
+        from geopkgtoolkit._spatialite import connect
+        from geopkgtoolkit.convert import import_geojson
+        from geopkgtoolkit.operations import clip
+
+        points_path = tmp_path / "points.geojson"
+        boundary_path = tmp_path / "boundary.geojson"
+        points_path.write_text(json.dumps(self.POINTS))
+        boundary_path.write_text(json.dumps(self.BOUNDARY))
+
+        gpkg = tmp_path / "test.gpkg"
+        import_geojson(gpkg, boundary_path, "project_boundary")
+        import_geojson(gpkg, points_path, "surveys")
+
+        # Fresh connection with GPKG mode on (the CLI default): the scenario
+        # that used to produce silently wrong results
+        con = connect(gpkg)
+        try:
+            blob = con.execute("SELECT HEX(geom) FROM surveys LIMIT 1").fetchone()[0]
+            assert blob[:8] == "0001E610", f"expected SRID 4326 in blob header, got {blob[:8]}"
+
+            n = con.execute(
+                "SELECT COUNT(*) FROM surveys s, project_boundary b "
+                "WHERE ST_Intersects(s.geom, b.geom) = 1"
+            ).fetchone()[0]
+            assert n == 1
+
+            out = clip(con, "surveys", "project_boundary", output_table="clipped")
+            count = con.execute(f"SELECT COUNT(*) FROM [{out}]").fetchone()[0]
+            assert count == 1
+        finally:
+            con.close()

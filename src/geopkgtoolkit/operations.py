@@ -261,7 +261,7 @@ def clip(
             JOIN [{rtree_c}] rc ON rs.maxx >= rc.minx AND rs.minx <= rc.maxx
                                AND rs.maxy >= rc.miny AND rs.miny <= rc.maxy
             JOIN [{clip_table}] c ON c.fid = rc.id
-            WHERE ST_Intersects(s.[{source_geom}], c.[{clip_geom}])
+            WHERE ST_Intersects(s.[{source_geom}], c.[{clip_geom}]) = 1
               AND s.[{source_geom}] IS NOT NULL
               AND c.[{clip_geom}] IS NOT NULL
         """)
@@ -284,7 +284,7 @@ def clip(
             SELECT {select_expr}
             FROM [{source_table}] s
             JOIN [{clip_table}] c
-            WHERE ST_Intersects(s.[{source_geom}], c.[{clip_geom}])
+            WHERE ST_Intersects(s.[{source_geom}], c.[{clip_geom}]) = 1
               AND s.[{source_geom}] IS NOT NULL
               AND c.[{clip_geom}] IS NOT NULL
         """)
@@ -388,7 +388,7 @@ def intersect(
             JOIN [{rtree_b}] rb ON ra.maxx >= rb.minx AND ra.minx <= rb.maxx
                                AND ra.maxy >= rb.miny AND ra.miny <= rb.maxy
             JOIN [{table_b}] b ON b.fid = rb.id
-            WHERE ST_Intersects(a.[{geom_a}], b.[{geom_b}])
+            WHERE ST_Intersects(a.[{geom_a}], b.[{geom_b}]) = 1
               AND a.[{geom_a}] IS NOT NULL
               AND b.[{geom_b}] IS NOT NULL
         """)
@@ -398,7 +398,7 @@ def intersect(
             SELECT {select_expr}
             FROM [{table_a}] a
             JOIN [{table_b}] b
-            WHERE ST_Intersects(a.[{geom_a}], b.[{geom_b}])
+            WHERE ST_Intersects(a.[{geom_a}], b.[{geom_b}]) = 1
               AND a.[{geom_a}] IS NOT NULL
               AND b.[{geom_b}] IS NOT NULL
         """)

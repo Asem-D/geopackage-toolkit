@@ -471,6 +471,15 @@ def import_geojson(
         con = connect(gpkg_path, enable_gpkg_mode=False)
     _ensure_gpkg_metadata(con)
 
+    # Fresh files may lack SpatiaLite metadata tables; without spatial_ref_sys
+    # geometry functions (ST_Intersects, ST_Intersection) behave inconsistently
+    has_srs = con.execute(
+        "SELECT name FROM sqlite_master WHERE name = 'spatial_ref_sys'"
+    ).fetchone()
+    if has_srs is None:
+        con.execute("SELECT InitSpatialMetaData(1)")
+        con.commit()
+
     # Load GeoJSON
     fc = json.loads(geojson_path.read_text(encoding="utf-8"))
     features = fc.get("features", [])
@@ -522,9 +531,10 @@ def import_geojson(
             vals.append(props.get(col))
             placeholders.append("?")
 
-        # Use GeomFromGeoJSON() SQL function for geometry
+        # Use GeomFromGeoJSON() + SetSRID() so the blob SRID matches the
+        # registered SRID (GeomFromGeoJSON alone can leave SRID unset)
         cols.append(f"[{geom_col}]")
-        placeholders.append("GeomFromGeoJSON(?)")
+        placeholders.append(f"SetSRID(GeomFromGeoJSON(?), {int(srid)})")
         vals.append(json.dumps(geom))
 
         sql = f"INSERT INTO [{layer_name}] ({', '.join(cols)}) VALUES ({', '.join(placeholders)})"
@@ -655,10 +665,11 @@ def import_shapefile(
 
         n_attr = len(field_names)
         attr_placeholders = ", ".join(["?"] * n_attr)
+        geom_ph = f"SetSRID(GeomFromGeoJSON(?), {int(srid)})"
         if attr_placeholders:
-            placeholders = f"{attr_placeholders}, GeomFromGeoJSON(?)"
+            placeholders = f"{attr_placeholders}, {geom_ph}"
         else:
-            placeholders = "GeomFromGeoJSON(?)"
+            placeholders = geom_ph
 
         sql = f"INSERT INTO [{layer_name}] ({insert_cols}) VALUES ({placeholders})"
         try:

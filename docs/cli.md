@@ -129,6 +129,157 @@ Total: 499,787 features across 1,627 zones (7.7s)
 
 ---
 
+### `geopkg import`
+
+Import a GeoJSON or Shapefile into a GeoPackage (creates the GeoPackage if missing).
+
+```bash
+geopkg import <input.geojson|.shp> --output <file.gpkg> --layer <name> [--geom-col COL] [--srid SRID]
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--output` | Output GeoPackage path (created if it does not exist) |
+| `--layer` | Layer name for the imported data |
+| `--geom-col COL` | Geometry column name (default: `geom`) |
+| `--srid SRID` | SRID assigned to the imported geometries (default: 4326) |
+
+**Example:**
+
+```bash
+$ geopkg import inbox/latest_survey.geojson --output survey_data.gpkg --layer surveys
+
+Imported 120 features into survey_data.gpkg -> surveys (0.0s)
+```
+
+**Notes:**
+
+- GeoJSON input is always WGS84 (EPSG:4326 per RFC 7946)
+- An existing layer with the same name is replaced
+- Shapefile input requires the optional extra: `pip install geopackage-toolkit[convert]`
+
+---
+
+### `geopkg export`
+
+Export a GeoPackage layer to GeoJSON or Shapefile.
+
+```bash
+geopkg export <file.gpkg> --layer LAYER --format {geojson,shapefile} --output PATH [--geom-col COL]
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--layer LAYER` | Layer to export |
+| `--format` | Output format: `geojson` (pure Python) or `shapefile` (requires `[convert]` extra) |
+| `--output PATH` | Output file path (missing directories are created automatically) |
+| `--geom-col COL` | Geometry column name (auto-detected if omitted) |
+
+**Example:**
+
+```bash
+$ geopkg export survey_data.gpkg --layer clipped --format geojson --output out/clipped.geojson
+
+Exported 54 features to out/clipped.geojson (0.0s)
+```
+
+---
+
+### `geopkg buffer`
+
+Buffer features by a distance and write the result to a new layer.
+
+```bash
+geopkg buffer <file.gpkg> --layer LAYER --distance N [--output NAME] [--no-attrs]
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--layer LAYER` | Layer to buffer |
+| `--distance N` | Buffer distance in CRS units (meters for projected CRS, degrees for EPSG:4326) |
+| `--output NAME` | Output layer name (default: `buffered`) |
+| `--no-attrs` | Exclude source attributes from the output layer |
+
+**Example:**
+
+```bash
+$ geopkg buffer survey_data.gpkg --layer clipped --distance 0.001 --output buffers
+
+Buffered 54 features -> buffers (0.0s)
+```
+
+# 0.001 degrees ≈ 100 m at EPSG:4326; use meters when the layer is in a projected CRS
+
+---
+
+### `geopkg clip`
+
+Clip a source layer by a polygon layer, keeping only what falls inside.
+
+```bash
+geopkg clip <file.gpkg> --source LAYER --clip LAYER [--output NAME]
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--source` | Source layer to clip |
+| `--clip` | Clip layer (polygon boundary) |
+| `--output NAME` | Output layer name (default: `clipped`) |
+
+**Example:**
+
+```bash
+$ geopkg clip survey_data.gpkg --source surveys --clip project_boundary --output clipped
+
+Clipped 54 features -> clipped (0.0s)
+```
+
+**Notes:**
+
+- Source attributes are preserved
+- Clip layer features are treated as one combined boundary
+
+---
+
+### `geopkg intersect`
+
+Spatial intersection of two layers: keeps the overlapping geometry and attributes from both.
+
+```bash
+geopkg intersect <file.gpkg> --layer-a LAYER --layer-b LAYER [--output NAME]
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--layer-a` | First input layer |
+| `--layer-b` | Second input layer |
+| `--output NAME` | Output layer name (default: `intersection`) |
+
+**Example:**
+
+```bash
+$ geopkg intersect survey_data.gpkg --layer-a surveys --layer-b project_boundary --output points_in_boundary
+
+Intersected 54 features -> points_in_boundary (0.0s)
+```
+
+**Notes:**
+
+- Attributes from both layers are kept, prefixed `a_` and `b_`
+- Unlike `clip`, both inputs contribute attributes (useful for overlay questions, e.g., parcels x flood zones)
+
+---
+
 ### `geopkg pipeline`
 
 Run a config-driven batch pipeline (JSON or YAML).
@@ -201,6 +352,19 @@ geopkg count data.gpkg --features pois --zones districts
 # 3. Compare results in a spreadsheet
 ```
 
+### Prepare Survey Data for Delivery
+
+```bash
+# 1. Import the latest survey export into the working GeoPackage
+geopkg import inbox/latest_survey.geojson --output survey_data.gpkg --layer surveys
+
+# 2. Clip to the project boundary
+geopkg clip survey_data.gpkg --source surveys --clip project_boundary --output clipped
+
+# 3. Export the result for the client
+geopkg export survey_data.gpkg --layer clipped --format geojson --output out/surveys.geojson
+```
+
 ### Batch Processing
 
 ```bash
@@ -230,4 +394,4 @@ done
 1. **Use `info` first** to understand the GeoPackage structure before running queries
 2. **Always validate with `--srid`** to catch CRS mismatches
 3. **The first `count` command is slower** because it builds the rtree index
-4. **Combine with other tools** for complex workflows (e.g., pipe to CSV with `--output`)
+4. **For multi-step workflows, use `geopkg pipeline`** — one config file, one command, a JSON run report, and CI-friendly exit codes
