@@ -401,3 +401,79 @@ def validate_and_fix(gpkg_path):
 # Usage
 validate_and_fix("problematic_data.gpkg")
 ```
+
+## Recipe 11: Flood-Risk Screening
+
+Which buildings fall inside a riparian buffer and the flood plain? Chain the spatial operations and export the result for the web team:
+
+```python
+from geopkgtoolkit import connect, buffer, clip, intersect, export_geojson
+
+con = connect("mashriq.gpkg")
+
+# Buffer the river (distance in CRS units; use a projected CRS for meters)
+buffer(con, "rivers", 100, "riparian_zone")
+
+# Keep buildings inside the study area only
+clip(con, "OSM_Buildings", "study_area", "bldgs_in_area")
+
+# Buildings that are both inside the study area and in the flood zone
+intersect(con, "bldgs_in_area", "flood_zones", "at_risk")
+
+# Export for MapLibre/Leaflet (pure Python, no extra dependencies)
+export_geojson(con, "at_risk", "at_risk.geojson")
+
+con.close()
+```
+
+Each operation creates a new layer in the same GeoPackage, so the originals stay untouched. Preview the results with `geopkg info mashriq.gpkg`.
+
+## Recipe 12: One-Command Data Intake QC
+
+Before a client GeoPackage enters your workflow, check it from the terminal:
+
+```bash
+geopkg validate client_data.gpkg --srid 4326
+```
+
+```
+GeoPackage: client_data.gpkg
+3 layers, 125,000 features, 2 warnings
+  parcels: 80,000 features, SRID=4326, OK
+  roads: 44,000 features, SRID=4326, 1 warning
+    WARNING: SRID mismatch (expected 4326, found 3857)
+```
+
+Exit code `1` on warnings, `0` when clean, so it drops straight into shell checks or CI:
+
+```bash
+geopkg validate client_data.gpkg --srid 4326 || echo "Fix data before loading"
+```
+
+## Recipe 13: Nightly Batch Pipeline
+
+Pull the latest survey export, clip it to the project boundary, and publish the result for the dashboard. One config file, one command:
+
+`pipeline.yaml`:
+
+```yaml
+gpkg: project.gpkg
+steps:
+  - step: import
+    input: "inbox/latest_survey.geojson"
+    layer: surveys
+  - step: clip
+    source: surveys
+    clip: project_boundary
+  - step: export
+    layer: clipped
+    format: geojson
+    output: "out/surveys.geojson"
+```
+
+```bash
+geopkg pipeline pipeline.yaml
+# 3/3 steps ok (1.8s)
+```
+
+Exit code `0` means the dashboard data is fresh. Failed steps are recorded in the JSON run report (`pipeline.report.json`) instead of silently producing stale output. Schedule it with cron, Task Scheduler, or GitHub Actions; see the [Pipeline Guide](guides/pipeline.md) for the full config reference.
