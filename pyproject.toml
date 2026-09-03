@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "geopackage-toolkit"
-version = "0.1.0"
+version = "0.3.0"
 description = "Python toolkit for GeoPackage: validate, query, convert, and publish spatial data without PostGIS or ArcGIS."
 readme = "README.md"
 license = "MIT"
@@ -41,8 +41,12 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
+convert = [
+    "pyshp>=2.3.0",
+]
 dev = [
     "pytest>=7.0",
+    "geopackage-toolkit[convert]",
 ]
 docs = [
     "mkdocs>=1.6,<2",

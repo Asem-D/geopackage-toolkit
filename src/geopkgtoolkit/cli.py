@@ -8,6 +8,8 @@ Usage:
     geopkg buffer <file.gpkg> --layer buildings --distance 100 --output buffered
     geopkg clip <file.gpkg> --source buildings --clip districts --output clipped
     geopkg intersect <file.gpkg> --layer-a buildings --layer-b flood_zones --output result
+    geopkg export <file.gpkg> --layer buildings --format geojson --output buildings.geojson
+    geopkg import <input.geojson> --output data.gpkg --layer buildings
 """
 
 import argparse
@@ -149,6 +151,110 @@ def cmd_intersect(args):
         con.close()
 
 
+def cmd_export(args):
+    """Export a GeoPackage layer to GeoJSON or Shapefile."""
+    from geopkgtoolkit._spatialite import connect
+    from geopkgtoolkit.convert import export_geojson, export_shapefile
+
+    con = connect(args.file)
+    try:
+        t0 = time.time()
+        fmt = args.format.lower()
+
+        if fmt == "geojson":
+            out = export_geojson(con, args.layer, args.output, args.geom_col)
+            elapsed = time.time() - t0
+            # Count features
+            from geopkgtoolkit._spatialite import list_layers
+            geom_col = args.geom_col
+            if not geom_col:
+                layers = list_layers(con)
+                for li in layers:
+                    if li["table_name"] == args.layer:
+                        geom_col = li["column_name"]
+                        break
+                if not geom_col:
+                    geom_col = "geom"
+            count = con.execute(
+                f"SELECT COUNT(*) FROM [{args.layer}] WHERE [{geom_col}] IS NOT NULL"
+            ).fetchone()[0]
+            print(f"Exported {count:,} features to {out} ({elapsed:.1f}s)")
+
+        elif fmt == "shapefile":
+            out = export_shapefile(con, args.layer, args.output, args.geom_col)
+            elapsed = time.time() - t0
+            from geopkgtoolkit._spatialite import list_layers
+            geom_col = args.geom_col
+            if not geom_col:
+                layers = list_layers(con)
+                for li in layers:
+                    if li["table_name"] == args.layer:
+                        geom_col = li["column_name"]
+                        break
+                if not geom_col:
+                    geom_col = "geom"
+            count = con.execute(
+                f"SELECT COUNT(*) FROM [{args.layer}] WHERE [{geom_col}] IS NOT NULL"
+            ).fetchone()[0]
+            # List created files
+            from pathlib import Path
+            base = Path(args.output).with_suffix("")
+            created = [str(base.with_suffix(ext)) for ext in [".shp", ".shx", ".dbf", ".prj"]
+                        if base.with_suffix(ext).exists()]
+            print(f"Exported {count:,} features to {', '.join(created)} ({elapsed:.1f}s)")
+
+        else:
+            print(f"Error: Unknown format '{fmt}'. Use 'geojson' or 'shapefile'.", file=sys.stderr)
+            return 1
+
+        return 0
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+    finally:
+        con.close()
+
+
+def cmd_import(args):
+    """Import a GeoJSON or Shapefile into a GeoPackage layer."""
+    from pathlib import Path
+    from geopkgtoolkit.convert import import_geojson, import_shapefile
+
+    t0 = time.time()
+    input_path = Path(args.input)
+    suffix = input_path.suffix.lower()
+
+    try:
+        if suffix == ".geojson":
+            layer = import_geojson(
+                args.output, args.input, args.layer,
+                geom_col=args.geom_col, srid=args.srid,
+            )
+        elif suffix == ".shp":
+            layer = import_shapefile(
+                args.output, args.input, args.layer,
+                geom_col=args.geom_col, srid=args.srid,
+            )
+        else:
+            print(f"Error: Unsupported file type '{suffix}'. Use .geojson or .shp.", file=sys.stderr)
+            return 1
+
+        elapsed = time.time() - t0
+        # Count features in the new layer
+        from geopkgtoolkit._spatialite import connect
+        con = connect(args.output)
+        try:
+            count = con.execute(f"SELECT COUNT(*) FROM [{layer}]").fetchone()[0]
+            print(f"Imported {count:,} features into {args.output} -> {layer} ({elapsed:.1f}s)")
+        finally:
+            con.close()
+
+        return 0
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="geopkg",
@@ -199,6 +305,24 @@ def main():
     p_int.add_argument("--layer-b", required=True, help="Second input layer")
     p_int.add_argument("--output", default="intersection", help="Output layer name (default: intersection)")
     p_int.set_defaults(func=cmd_intersect)
+
+    # export
+    p_exp = subparsers.add_parser("export", help="Export a GeoPackage layer to GeoJSON or Shapefile")
+    p_exp.add_argument("file", help="Path to GeoPackage file")
+    p_exp.add_argument("--layer", required=True, help="Layer to export")
+    p_exp.add_argument("--format", required=True, choices=["geojson", "shapefile"], help="Output format")
+    p_exp.add_argument("--output", required=True, help="Output file path")
+    p_exp.add_argument("--geom-col", default=None, help="Geometry column name (auto-detected)")
+    p_exp.set_defaults(func=cmd_export)
+
+    # import
+    p_imp = subparsers.add_parser("import", help="Import a GeoJSON or Shapefile into a GeoPackage")
+    p_imp.add_argument("input", help="Input file path (.geojson or .shp)")
+    p_imp.add_argument("--output", required=True, help="Output GeoPackage path")
+    p_imp.add_argument("--layer", required=True, help="Layer name for the imported data")
+    p_imp.add_argument("--geom-col", default="geom", help="Geometry column name (default: geom)")
+    p_imp.add_argument("--srid", type=int, default=4326, help="SRID (default: 4326)")
+    p_imp.set_defaults(func=cmd_import)
 
     args = parser.parse_args()
     if not args.command:

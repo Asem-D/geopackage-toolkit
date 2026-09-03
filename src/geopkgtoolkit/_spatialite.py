@@ -13,11 +13,14 @@ from pathlib import Path
 _SPATIALITE_DIR = os.environ.get("SPATIALITE_DIR", r"C:\spatialite")
 
 
-def connect(gpkg_path: str | Path) -> sqlite3.Connection:
+def connect(gpkg_path: str | Path, *, enable_gpkg_mode: bool = True) -> sqlite3.Connection:
     """Open a GeoPackage with SpatiaLite loaded.
 
     Args:
         gpkg_path: Path to the GeoPackage file.
+        enable_gpkg_mode: Enable GeoPackage mode (default True).
+            Set to False when you need ST_AsText/ST_AsBinary to work
+            reliably after close/reopen cycles (SpatiaLite 5.1.0 bug).
 
     Returns:
         sqlite3.Connection with SpatiaLite extension loaded.
@@ -53,10 +56,11 @@ def connect(gpkg_path: str | Path) -> sqlite3.Connection:
         ) from e
 
     # Enable GeoPackage extensions
-    try:
-        con.execute("SELECT EnableGpkgMode()")
-    except Exception:
-        pass  # Not all SpatiaLite builds support this
+    if enable_gpkg_mode:
+        try:
+            con.execute("SELECT EnableGpkgMode()")
+        except Exception:
+            pass  # Not all SpatiaLite builds support this
 
     return con
 

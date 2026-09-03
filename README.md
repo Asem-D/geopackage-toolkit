@@ -4,7 +4,7 @@
 [![Docs](https://readthedocs.org/projects/geopackage-toolkit/badge/?version=latest)](https://geopackage-toolkit.readthedocs.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Python toolkit for GeoPackage spatial data. Validate, query, and explore spatial data without PostGIS or ArcGIS.
+Python toolkit for GeoPackage spatial data. Validate, query, and operate on spatial data without PostGIS or ArcGIS.
 
 **Zero compiled dependencies.** Uses SpatiaLite (embedded in SQLite) for all spatial operations. One file format (`.gpkg`), one dependency chain, clean Python API.
 
@@ -36,10 +36,7 @@ This toolkit fills that gap. Local-first, no server required.
 ## Installation
 
 ```bash
-# From source (PyPI coming soon)
-git clone https://github.com/Asem-D/geopackage-toolkit.git
-cd geopackage-toolkit
-pip install -e .
+pip install geopackage-toolkit
 ```
 
 ### Prerequisites
@@ -64,6 +61,27 @@ geopkg count data.gpkg --features buildings --zones admin3
 
 # Show layer info
 geopkg info data.gpkg
+
+# Buffer features (output saved as new layer in same GeoPackage)
+geopkg buffer data.gpkg --layer buildings --distance 100 --output buffered_buildings
+
+# Clip a layer to a boundary
+geopkg clip data.gpkg --source buildings --clip district_boundary --output clipped_buildings
+
+# Spatial intersection of two layers
+geopkg intersect data.gpkg --layer-a buildings --layer-b flood_zones --output buildings_in_flood
+
+# Export a layer to GeoJSON (pure Python, no extra dependencies)
+geopkg export data.gpkg --layer buildings --format geojson --output buildings.geojson
+
+# Export a layer to Shapefile (requires: pip install geopackage-toolkit[convert])
+geopkg export data.gpkg --layer buildings --format shapefile --output buildings.shp
+
+# Import GeoJSON into a GeoPackage (creates the file if missing)
+geopkg import buildings.geojson --output new_data.gpkg --layer buildings
+
+# Import a Shapefile into a GeoPackage
+geopkg import buildings.shp --output new_data.gpkg --layer buildings
 ```
 
 ## Python API
@@ -110,6 +128,51 @@ from geopkgtoolkit import points_in_polygons
 result = points_in_polygons(con, "pois", "districts")
 # Returns: [(point_fid, polygon_fid_or_None), ...]
 ```
+
+### Spatial Operations
+
+```python
+from geopkgtoolkit import connect, buffer, clip, intersect
+
+con = connect("data.gpkg")
+
+# Buffer features by a distance (CRS units)
+buffered = buffer(con, "buildings", distance=100, output_table="buffered_buildings")
+# Creates new layer with buffered polygons
+
+# Clip features to a boundary
+clipped = clip(con, "buildings", "district_boundary", output_table="clipped_buildings")
+# Creates new layer with features clipped to polygon boundary
+
+# Spatial intersection of two layers
+result = intersect(con, "buildings", "flood_zones", output_table="buildings_in_flood")
+# Creates new layer with the intersection of two layers
+```
+
+All operations write results back to the same GeoPackage file. Attributes from both layers are preserved in intersection.
+
+### Format Conversion
+
+```python
+from geopkgtoolkit import connect, export_geojson, export_shapefile, import_geojson, import_shapefile
+
+con = connect("data.gpkg")
+
+# Export to GeoJSON (pure Python, zero extra dependencies)
+export_geojson(con, "buildings", "buildings.geojson")
+
+# Export to Shapefile (requires: pip install geopackage-toolkit[convert])
+export_shapefile(con, "buildings", "buildings.shp")
+con.close()
+
+# Import GeoJSON (creates the GeoPackage if it doesn't exist)
+import_geojson("new_data.gpkg", "input.geojson", "buildings")
+
+# Import Shapefile
+import_shapefile("new_data.gpkg", "input.shp", "buildings")
+```
+
+GeoJSON export/import is pure Python. Shapefile support requires the optional `pyshp` dependency: `pip install geopackage-toolkit[convert]`.
 
 ### Connect
 

@@ -103,17 +103,18 @@ def validate_layer(con: sqlite3.Connection, table: str, expected_srid: Optional[
     geom_type = row[1]
     srid = row[2]
 
-    # Feature counts
-    feature_count = con.execute(f"SELECT COUNT(*) FROM [{table}]").fetchone()[0]
-    null_count = con.execute(
-        f"SELECT COUNT(*) FROM [{table}] WHERE [{geom_col}] IS NULL"
-    ).fetchone()[0]
-    empty_count = con.execute(
-        f"SELECT COUNT(*) FROM [{table}] WHERE ST_IsEmpty([{geom_col}])"
-    ).fetchone()[0]
-    invalid_count = con.execute(
-        f"SELECT COUNT(*) FROM [{table}] WHERE NOT ST_IsValid([{geom_col}])"
-    ).fetchone()[0]
+    # Feature counts: single query instead of 4 separate scans
+    stats = con.execute(
+        f"SELECT COUNT(*), "
+        f"SUM(CASE WHEN [{geom_col}] IS NULL THEN 1 ELSE 0 END), "
+        f"SUM(CASE WHEN ST_IsEmpty([{geom_col}]) THEN 1 ELSE 0 END), "
+        f"SUM(CASE WHEN NOT ST_IsValid([{geom_col}]) THEN 1 ELSE 0 END) "
+        f"FROM [{table}]"
+    ).fetchone()
+    feature_count = stats[0]
+    null_count = stats[1] or 0
+    empty_count = stats[2] or 0
+    invalid_count = stats[3] or 0
 
     # Bounding box - use layer extent for sanity checks
     bbox_row = con.execute(
