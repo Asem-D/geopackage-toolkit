@@ -33,6 +33,80 @@ GeoPackage is the [OGC standard](https://www.ogc.org/standard/geopackage/) that 
 
 This toolkit fills that gap. Local-first, no server required.
 
+## Real-World Use Cases
+
+### Building density per district
+
+You're an urban planner. A client sends `mashriq.gpkg` with 515,013 OSM buildings and 1,627 district boundaries. You need buildings per district for a density study. PostGIS means a server to maintain. ArcGIS means a license. This is one function call:
+
+```python
+from geopkgtoolkit import connect, count_in_zones
+
+con = connect("mashriq.gpkg")
+counts = count_in_zones(con, "OSM_Buildings", "lbn_adm3")
+# [(zone_fid, count), ...] -- 499,787 buildings in 1,627 zones, ~8 seconds
+```
+
+### Flood-risk screening before a site visit
+
+A new project sits next to a seasonal river. Which buildings fall inside the 100 m riparian zone and the flood plain? Buffer, clip, intersect, export for the web team:
+
+```python
+from geopkgtoolkit import connect, buffer, clip, intersect, export_geojson
+
+con = connect("mashriq.gpkg")
+buffer(con, "rivers", 100, "riparian_zone")          # distance in CRS units
+clip(con, "OSM_Buildings", "study_area", "bldgs_in_area")
+intersect(con, "bldgs_in_area", "flood_zones", "at_risk")
+export_geojson(con, "at_risk", "at_risk.geojson")    # drop into MapLibre/Leaflet
+```
+
+Every result is a new layer in the same GeoPackage. Originals stay untouched.
+
+### Client data intake QC
+
+Someone emails you a 125,000-feature GeoPackage. Before it enters your workflow, run one command:
+
+```bash
+geopkg validate client_data.gpkg --srid 4326
+```
+
+```
+GeoPackage: client_data.gpkg
+3 layers, 125,000 features, 2 warnings
+  parcels: 80,000 features, SRID=4326, OK
+  roads: 44,000 features, SRID=4326, 1 warning
+    WARNING: SRID mismatch (expected 4326, found 3857)
+```
+
+Null geometries, invalid polygons, and SRID mismatches surface in the first minute, not three days into analysis.
+
+### A nightly batch job
+
+Every night: pull the latest survey export, clip it to the project boundary, publish the result for the dashboard. One config file, one command, JSON report:
+
+```yaml
+gpkg: project.gpkg
+steps:
+  - step: import
+    input: "inbox/latest_survey.geojson"
+    layer: surveys
+  - step: clip
+    source: surveys
+    clip: project_boundary
+  - step: export
+    layer: clipped
+    format: geojson
+    output: "out/surveys.geojson"
+```
+
+```bash
+geopkg pipeline pipeline.yaml
+# 3/3 steps ok (1.8s) -- exit 0 means the dashboard data is fresh
+```
+
+Failed steps are recorded in the report instead of silently producing stale output. Full config reference in the [Pipeline Guide](docs/guides/pipeline.md).
+
 ## Installation
 
 ```bash
