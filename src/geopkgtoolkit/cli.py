@@ -265,7 +265,7 @@ def cmd_pipeline(args):
         cfg = load_config(args.config)
         default_report = Path(args.config).with_suffix(".report.json")
         report = run_pipeline(
-            cfg,
+            args.config,
             report_path=cfg.get("report") or default_report,
         )
     except Exception as e:
