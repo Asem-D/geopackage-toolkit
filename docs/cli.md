@@ -333,10 +333,10 @@ Report: pipeline.report.json
 # 1. Check what layers exist
 geopkg info data.gpkg
 
-# 2. Validate all layers
+# 2. Validate all layers (read-only: reports issues, never edits the file)
 geopkg validate data.gpkg --srid 4326
 
-# 3. Fix any issues, then re-validate
+# 3. Fix flagged issues in your GIS tool, then re-run to confirm
 geopkg validate data.gpkg --srid 4326
 ```
 
