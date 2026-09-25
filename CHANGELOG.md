@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.4.1] - 2026-09-25
 
 ### Fixed
 - **Imported geometry blobs now carry the registered SRID** (`SetSRID(GeomFromGeoJSON(...), srid)`). Previously the blob SRID could be left unset (0/-1), and mismatched blob SRIDs made `ST_Intersects` return `-1`, which SQLite treats as truthy — so `clip`/`intersect` could silently keep every feature instead of the matching ones
