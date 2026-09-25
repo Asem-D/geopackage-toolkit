@@ -274,7 +274,7 @@ def clip(
             JOIN [{clip_table}] c
             WHERE rs.maxx >= ST_MinX(c.[{clip_geom}]) AND rs.minx <= ST_MaxX(c.[{clip_geom}])
               AND rs.maxy >= ST_MinY(c.[{clip_geom}]) AND rs.miny <= ST_MaxY(c.[{clip_geom}])
-              AND ST_Intersects(s.[{source_geom}], c.[{clip_geom}])
+              AND ST_Intersects(s.[{source_geom}], c.[{clip_geom}]) = 1
               AND s.[{source_geom}] IS NOT NULL
               AND c.[{clip_geom}] IS NOT NULL
         """)

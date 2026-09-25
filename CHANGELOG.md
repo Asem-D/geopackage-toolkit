@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.2] - 2026-09-25
+
+### Fixed
+- `clip()` rtree-mismatch branch (source layer has an rtree index, clip layer does not) now also requires `ST_Intersects(...) = 1` explicitly, completing the v0.4.1 defense so SpatiaLite error codes can never pass as matches in any code path
+
 ## [0.4.1] - 2026-09-25
 
 ### Fixed
